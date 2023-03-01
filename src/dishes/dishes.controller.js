@@ -44,7 +44,7 @@ function bodyDataHas(propertyName) {
 
 function pricePropertyIsValid(req, res, next){
     const { data: { price } = {} } = req.body;
-    if(price > 0){
+    if(price > 0 && typeof(price) == 'number'){
         return next();
     } 
     next({
@@ -54,7 +54,7 @@ function pricePropertyIsValid(req, res, next){
 }
 
 function create(req, res){
-    const { data: { name, description, price, image_url } ={} } = req.body;
+    const { data: { name, description, price, image_url } = {} } = req.body;
     const newDish = {
         id: nextId(), 
         name, 
@@ -64,6 +64,35 @@ function create(req, res){
     }
     dishes.push(newDish);
     res.status(201).json({ data: newDish });
+}
+
+function idMatches(req, res, next){
+  const { data: { id } = {} } = req.body; 
+  
+  if(id){
+      const { dishId } = req.params; 
+      if(id !== dishId){
+        return next({
+          status: 400,
+          message: `id ${id} does not match route id: ${dishId}`
+        })
+      }
+   }
+  
+  return next()
+}
+
+function update(req, res, next){
+    const dish = res.locals.dish;
+    const { data: { id, name, description, price, image_url} = {} } = req.body;
+  
+    // Update dish
+    dish.name = name; 
+    dish.description = description; 
+    dish.price = price;
+    dish.image_url = image_url;
+
+    res.json({ data: dish });
 }
 
 module.exports = {
@@ -77,4 +106,14 @@ module.exports = {
     ],
     read: [dishExists, read],
     list,
+    update: [
+        dishExists, 
+        idMatches,
+        bodyDataHas("name"),
+        bodyDataHas("description"),
+        bodyDataHas("price"),
+        pricePropertyIsValid,
+        bodyDataHas("image_url"),
+        update
+    ]
 }
