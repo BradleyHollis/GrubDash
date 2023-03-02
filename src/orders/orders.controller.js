@@ -67,6 +67,22 @@ function dishIsAnArray(req, res, next){
   }
 }
 
+function dishQuantityIsInteger(req, res, next){
+    const { data: { dishes } = {} } = req.body; 
+    const allIntegers = dishes.every(({ quantity }) => typeof(quantity) == 'number');
+
+    if(allIntegers){
+        return next()
+    } else {
+        const non_integers = dishes.filter(({ quantity}) => typeof(quantity) === 'number');
+
+        return next({
+            status: 400, 
+            message: `The quantity data type must be of type 'integer'. Received ${non_integers.length} valid integers.`
+        })
+    }
+}
+
 function dishContainsQuantity(req, res, next){
   const { data: { dishes } = {} } = req.body; 
   dishes.forEach((dish) => {
@@ -181,6 +197,7 @@ module.exports = {
         bodyDataHas("dishes"),
         orderContainsOneDish,
         dishIsAnArray,
+        dishQuantityIsInteger,
         dishContainsQuantity,
         update,
     ],
