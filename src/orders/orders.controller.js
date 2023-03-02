@@ -86,7 +86,6 @@ function dishContainsQuantity(req, res, next){
   return next();
 }
 
-
 function create(req, res){
     const { data: { deliverTo, mobileNumber, status, dishes } = {} } = req.body; 
   
@@ -129,11 +128,7 @@ function validateStatusProperty(req, res, next){
       message: 'Invalid status type'
     })
   }
-  
-  return next();
 }
-
-
 
 function update(req, res, next){
     const order = res.locals.order;
@@ -145,7 +140,23 @@ function update(req, res, next){
     order.status = status; 
     order.dishes = dishes; 
 
-    res.json({ data: order })
+    res.json({ data: order });
+}
+
+function destroy(req, res, next){
+   const { orderId } = req.params; 
+   const toDelete = res.locals.order;
+   const index = orders.indexOf(({ id }) => id == orderId)
+  
+   if(toDelete.status !== 'pending'){
+     return next({
+       status: 400, 
+       message: 'Order may only be canceled in a pending status.'
+     })
+   }
+  
+   orders.splice(index, 1);
+   res.sendStatus(204);
 }
 
 module.exports = {
@@ -172,5 +183,6 @@ module.exports = {
         dishIsAnArray,
         dishContainsQuantity,
         update,
-    ]
+    ],
+    delete: [orderExists, destroy],
 }
