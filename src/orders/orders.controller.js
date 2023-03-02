@@ -102,6 +102,52 @@ function create(req, res){
     res.status(201).json({ data: newOrder });
 }
 
+function idMatches(req, res, next){
+    const { data: { id } = {} } = req.body; 
+    
+    if(id){
+        const { orderId } = req.params; 
+        if(id !== orderId){
+          return next({
+            status: 400,
+            message: `id ${id} does not match route id: ${orderId}`
+          })
+        }
+     }
+    
+    return next()
+}
+
+function validateStatusProperty(req, res, next){
+  const { data: { status } = {} } = req.body; 
+  const validStatuses = ['pending', 'preparing', 'out-for-delivery', 'delivered'];
+  if(validStatuses.includes(status)){
+    return next();
+  } else {
+    return next({
+      status: 400, 
+      message: 'Invalid status type'
+    })
+  }
+  
+  return next();
+}
+
+
+
+function update(req, res, next){
+    const order = res.locals.order;
+    const { data: {deliverTo, mobileNumber, status, dishes } = {} } = req.body;
+
+    // Update order
+    order.deliverTo = deliverTo;
+    order.mobileNumber = mobileNumber; 
+    order.status = status; 
+    order.dishes = dishes; 
+
+    res.json({ data: order })
+}
+
 module.exports = {
     create: [
         bodyDataHas("deliverTo"),
@@ -114,4 +160,17 @@ module.exports = {
     ],
     list, 
     read: [orderExists, read],
+    update: [
+        orderExists,
+        idMatches,
+        bodyDataHas("deliverTo"),
+        bodyDataHas("mobileNumber"),
+        bodyDataHas("status"),
+        validateStatusProperty,
+        bodyDataHas("dishes"),
+        orderContainsOneDish,
+        dishIsAnArray,
+        dishContainsQuantity,
+        update,
+    ]
 }
